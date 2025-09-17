@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JelantahGO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              border: 'hsl(158 20% 80%)',
+              input: 'hsl(158 20% 85%)',
+              ring: 'hsl(147 47% 36%)',
+              background: 'hsl(158 33% 91%)',
+              foreground: 'hsl(147 47% 10%)',
+              primary: {
+                DEFAULT: 'hsl(147 47% 36%)',
+                foreground: 'hsl(158 33% 98%)',
+                '50': '#eaf7f1',
+                '100': '#cdecd9',
+                '200': '#b0e2c2',
+                '300': '#93d7aa',
+                '400': '#76cd93',
+                '500': '#59c27b',
+                '600': '#318f63',
+                '700': '#297652',
+                '800': '#215e41',
+                '900': '#194531',
+                '950': '#102d20',
+              },
+              secondary: {
+                DEFAULT: 'hsl(158 20% 85%)',
+                foreground: 'hsl(147 47% 10%)',
+              },
+              destructive: {
+                DEFAULT: 'hsl(0 84.2% 60.2%)',
+                foreground: 'hsl(0 0% 98%)',
+              },
+              muted: {
+                DEFAULT: 'hsl(158 20% 88%)',
+                foreground: 'hsl(147 25% 40%)',
+              },
+              accent: {
+                DEFAULT: 'hsl(180 57% 66%)',
+                foreground: 'hsl(147 47% 10%)',
+              },
+              popover: {
+                DEFAULT: 'hsl(158 33% 96%)',
+                foreground: 'hsl(147 47% 10%)',
+              },
+              card: {
+                DEFAULT: 'hsl(158 33% 96%)',
+                foreground: 'hsl(147 47% 10%)',
+              },
+              sidebar: {
+                  background: 'hsl(240 5.9% 10%)',
+                  foreground: 'hsl(0 0% 98%)',
+                  accent: 'hsl(240 3.7% 15.9%)',
+              }
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

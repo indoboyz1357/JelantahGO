@@ -1,0 +1,5 @@
+{
+  "name": "JelantahGO",
+  "description": "A comprehensive system for managing used cooking oil pickups, including features for admins, customers, couriers, and warehouse staff. This app facilitates order management, billing, customer and user management, and system settings.",
+  "requestFramePermissions": []
+}
