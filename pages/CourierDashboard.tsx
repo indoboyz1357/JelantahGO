@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import imageCompression from 'browser-image-compression';
+import { supabase } from '../supabaseClient';
 import { User, Order, OrderStatus } from '../types';
 import Modal from '../components/Modal';
 import { LogoutIcon, CameraIcon, PickupIcon, CashIcon } from '../components/icons';
@@ -34,6 +36,8 @@ const PickupView: React.FC<CourierDashboardProps> = ({ currentUser, orders, setO
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isCompleteModalOpen, setCompleteModalOpen] = useState(false);
     const [actualLiters, setActualLiters] = useState('');
+    const [pickupPhoto, setPickupPhoto] = useState<File | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     const availableOrders = useMemo(() => orders.filter(o => o.status === OrderStatus.Pending), [orders]);
     const myPickups = useMemo(() => {
@@ -56,21 +60,55 @@ const PickupView: React.FC<CourierDashboardProps> = ({ currentUser, orders, setO
         setCompleteModalOpen(true);
     };
     
-    const handleCompletePickup = () => {
+    const handleCompletePickup = async () => {
         if (!selectedOrder || !actualLiters) {
             alert("Harap masukkan liter aktual yang dijemput.");
             return;
         }
-        setOrders(prev => prev.map(o => o.id === selectedOrder.id ? {
-            ...o, 
-            status: OrderStatus.Completed,
-            actualLiters: parseInt(actualLiters, 10),
-            pickupPhotoUrl: 'https://picsum.photos/seed/pickup-completed/200/300'
-        } : o));
-        
-        setCompleteModalOpen(false);
-        setSelectedOrder(null);
-        setActualLiters('');
+        if (!pickupPhoto) {
+            alert("Harap unggah foto bukti pickup.");
+            return;
+        }
+
+        setIsUploading(true);
+
+        try {
+            const options = {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1920,
+                useWebWorker: true,
+                fileType: 'image/webp'
+            };
+            const compressedFile = await imageCompression(pickupPhoto, options);
+
+            const filePath = `pickup-photos/${currentUser.id}/${selectedOrder.id}-${Date.now()}.webp`;
+            const { data, error } = await supabase.storage
+                .from('pickup-photos')
+                .upload(filePath, compressedFile);
+
+            if (error) {
+                throw error;
+            }
+
+            const { publicURL } = supabase.storage.from('pickup-photos').getPublicUrl(filePath).data;
+
+            setOrders(prev => prev.map(o => o.id === selectedOrder.id ? {
+                ...o,
+                status: OrderStatus.Completed,
+                actualLiters: parseInt(actualLiters, 10),
+                pickupPhotoUrl: publicURL
+            } : o));
+
+            setCompleteModalOpen(false);
+            setSelectedOrder(null);
+            setActualLiters('');
+            setPickupPhoto(null);
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            alert('Gagal mengunggah gambar. Silakan coba lagi.');
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const renderMyPickupAction = (order: Order) => {
@@ -173,15 +211,25 @@ const PickupView: React.FC<CourierDashboardProps> = ({ currentUser, orders, setO
                     <div>
                          <label className="block text-sm font-medium text-foreground mb-1">Upload Bukti Pickup</label>
                          <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-border border-dashed rounded-md">
-                             <div className="space-y-1 text-center">
-                                 <CameraIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                                 <p className="text-sm text-muted-foreground">Fitur upload dinonaktifkan di demo ini.</p>
-                             </div>
-                         </div>
+                            <div className="space-y-1 text-center">
+                                <CameraIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                                <div className="flex text-sm text-muted-foreground">
+                                    <label htmlFor="file-upload" className="relative cursor-pointer bg-card rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500">
+                                        <span>Upload a file</span>
+                                        <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={(e) => setPickupPhoto(e.target.files ? e.target.files[0] : null)} />
+                                    </label>
+                                    <p className="pl-1">or drag and drop</p>
+                                </div>
+                                <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
+                                {pickupPhoto && <p className="text-sm text-foreground">{pickupPhoto.name}</p>}
+                            </div>
+                        </div>
                     </div>
                     <div className="flex justify-end space-x-2">
                         <button onClick={() => setCompleteModalOpen(false)} className="px-4 py-2 bg-muted text-muted-foreground rounded-md hover:bg-secondary">Batal</button>
-                        <button onClick={handleCompletePickup} className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">Selesaikan</button>
+                        <button onClick={handleCompletePickup} className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700" disabled={isUploading}>
+                            {isUploading ? 'Mengunggah...' : 'Selesaikan'}
+                        </button>
                     </div>
                 </div>
             </Modal>
