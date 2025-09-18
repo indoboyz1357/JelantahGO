@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
-import { PriceTier } from '../types';
+import { PriceTier, User, Customer, Order, OrderStatus } from '../types';
+import WhitelistModal from '../components/WhitelistModal';
 
 interface SettingsPageProps {
   priceTiers: PriceTier[];
   setPriceTiers: React.Dispatch<React.SetStateAction<PriceTier[]>>;
+  users: User[];
+  customers: Customer[];
+  orders: Order[];
+  whitelist: string[];
+  setWhitelist: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ priceTiers, setPriceTiers }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ priceTiers, setPriceTiers, users, customers, orders, whitelist, setWhitelist }) => {
   const [tiers, setTiers] = useState<PriceTier[]>(priceTiers);
   const [featureMessage, setFeatureMessage] = useState('');
+  const [isWhitelistModalOpen, setWhitelistModalOpen] = useState(false);
 
   const handleTierChange = (index: number, field: keyof PriceTier, value: any) => {
     const newTiers = [...tiers];
@@ -25,11 +32,37 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ priceTiers, setPriceTiers }
     alert('Pengaturan harga berhasil disimpan!');
   }
   
-  const handleFeatureClick = (featureName: string) => {
-    const message = `Simulasi: Aksi untuk "${featureName}" telah berhasil dijalankan.`;
-    setFeatureMessage(message);
-    setTimeout(() => setFeatureMessage(''), 4000); // Hide message after 4 seconds
+  const handleBackupDatabase = () => {
+    try {
+      const dataToBackup = {
+        users,
+        customers,
+        orders,
+        priceTiers,
+        backupTimestamp: new Date().toISOString(),
+      };
+
+      const jsonString = JSON.stringify(dataToBackup, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `jelantahgo-backup-${new Date().toISOString().split('T')[0]}.json`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error("Proses backup gagal:", error);
+      alert("Proses backup gagal. Silakan periksa konsol untuk detail.");
+    }
   };
+
+
 
   const renderSection = (title: string, children: React.ReactNode) => (
     <div className="bg-card p-6 rounded-lg shadow-md mb-6">
@@ -85,13 +118,20 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ priceTiers, setPriceTiers }
               </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button onClick={() => handleFeatureClick('Backup Database')} className="w-full p-3 bg-secondary text-secondary-foreground rounded-md hover:bg-primary/20 transition-colors">Backup Database</button>
-              <button onClick={() => handleFeatureClick('Whitelist Aplikasi')} className="w-full p-3 bg-secondary text-secondary-foreground rounded-md hover:bg-primary/20 transition-colors">Whitelist Aplikasi</button>
-              <button onClick={() => handleFeatureClick('Forward Data ke Google Sheet')} className="w-full p-3 bg-secondary text-secondary-foreground rounded-md hover:bg-primary/20 transition-colors">Forward Data ke Google Sheet</button>
-              <button onClick={() => handleFeatureClick('Notifikasi')} className="w-full p-3 bg-secondary text-secondary-foreground rounded-md hover:bg-primary/20 transition-colors">Notifikasi</button>
+              <button onClick={handleBackupDatabase} className="w-full p-3 bg-secondary text-secondary-foreground rounded-md hover:bg-primary/20 transition-colors">Backup Database</button>
+              <button onClick={() => setWhitelistModalOpen(true)} className="w-full p-3 bg-secondary text-secondary-foreground rounded-md hover:bg-primary/20 transition-colors">Whitelist Aplikasi</button>
+              <button onClick={() => alert('Fungsi ini belum diimplementasikan.')} className="w-full p-3 bg-secondary text-secondary-foreground rounded-md hover:bg-primary/20 transition-colors">Forward Data ke Google Sheet</button>
+              <button onClick={() => alert('Fungsi ini belum diimplementasikan.')} className="w-full p-3 bg-secondary text-secondary-foreground rounded-md hover:bg-primary/20 transition-colors">Notifikasi</button>
           </div>
         </>
       ))}
+
+      <WhitelistModal
+        isOpen={isWhitelistModalOpen}
+        onClose={() => setWhitelistModalOpen(false)}
+        whitelist={whitelist}
+        setWhitelist={setWhitelist}
+      />
     </div>
   );
 };

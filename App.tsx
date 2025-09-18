@@ -26,6 +26,7 @@ const App: React.FC = () => {
     const [customers, setCustomers] = useState<Customer[]>(DEMO_CUSTOMERS);
     const [orders, setOrders] = useState<Order[]>(DEMO_ORDERS);
     const [priceTiers, setPriceTiers] = useState<PriceTier[]>(DEMO_PRICETIERS);
+    const [whitelist, setWhitelist] = useState<string[]>(['127.0.0.1']); // Default whitelist
 
     // Login/Logout handlers
     const handleLogin = (user: User) => {
@@ -70,7 +71,7 @@ const App: React.FC = () => {
                         {currentPage === 'orders' && <OrdersPage orders={orders} setOrders={setOrders} />}
                         {currentPage === 'customers' && <CustomersPage customers={customers} setCustomers={setCustomers} />}
                         {currentPage === 'billing' && <BillingPage orders={orders} customers={customers} priceTiers={priceTiers} setOrders={setOrders}/>}
-                        {currentPage === 'settings' && <SettingsPage priceTiers={priceTiers} setPriceTiers={setPriceTiers} />}
+                        {currentPage === 'settings' && <SettingsPage priceTiers={priceTiers} setPriceTiers={setPriceTiers} users={users} customers={customers} orders={orders} whitelist={whitelist} setWhitelist={setWhitelist} />}
                         {currentPage === 'users' && <UsersPage users={users} setUsers={setUsers} />}
                     </DashboardLayout>
                 );

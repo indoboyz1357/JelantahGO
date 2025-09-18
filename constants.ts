@@ -41,11 +41,13 @@ export const DEMO_ORDERS: Order[] = [
     },
     {
         id: 'ORD-004', customerId: 'cust-1', customerName: 'Warung Bu Siti', customerPhone: '081234567890', customerKecamatan: 'Coblong', customerKota: 'Bandung',
-        estimatedLiters: 25, status: OrderStatus.Assigned, courierId: 'user-3', createdAt: new Date().toISOString()
+        estimatedLiters: 25, actualLiters: 25, status: OrderStatus.Completed, courierId: 'user-3', createdAt: new Date().toISOString(),
+        pickupPhotoUrl: 'https://picsum.photos/seed/pickup4/200/300'
     },
     {
         id: 'ORD-005', customerId: 'cust-2', customerName: 'Restoran Padang Jaya', customerPhone: '089876543210', customerKecamatan: 'Andir', customerKota: 'Bandung',
-        estimatedLiters: 60, status: OrderStatus.Pending, createdAt: new Date().toISOString()
+        estimatedLiters: 60, actualLiters: 58, status: OrderStatus.Completed, courierId: 'user-2', createdAt: new Date().toISOString(),
+        pickupPhotoUrl: 'https://picsum.photos/seed/pickup5/200/300'
     },
 ];
 

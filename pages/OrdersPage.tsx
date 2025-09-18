@@ -22,6 +22,19 @@ const getStatusColor = (status: OrderStatus) => {
 };
 
 const OrdersPage: React.FC<OrdersPageProps> = ({ orders, setOrders }) => {
+    const [forwardedOrders, setForwardedOrders] = useState<Set<string>>(new Set());
+
+    React.useEffect(() => {
+        const completedOrders = orders.filter(o => o.status === OrderStatus.Completed && !forwardedOrders.has(o.id));
+        if (completedOrders.length > 0) {
+            console.log(`Found ${completedOrders.length} new completed orders to forward.`);
+            forwardToGoogleSheet(completedOrders);
+            const newForwarded = new Set(forwardedOrders);
+            completedOrders.forEach(o => newForwarded.add(o.id));
+            setForwardedOrders(newForwarded);
+        }
+    }, [orders]);
+
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isAssignModalOpen, setAssignModalOpen] = useState(false);
     const [isVerifyModalOpen, setVerifyModalOpen] = useState(false);
@@ -69,12 +82,32 @@ const OrdersPage: React.FC<OrdersPageProps> = ({ orders, setOrders }) => {
     
     const handleVerifyOrder = () => {
         if (!selectedOrder) return;
-         setOrders(prevOrders => prevOrders.map(o => 
-            o.id === selectedOrder.id ? { ...o, status: OrderStatus.Verified } : o
+        const updatedOrder = { ...selectedOrder, status: OrderStatus.Verified };
+        setOrders(prevOrders => prevOrders.map(o =>
+            o.id === selectedOrder.id ? updatedOrder : o
         ));
         setVerifyModalOpen(false);
         setSelectedOrder(null);
     }
+
+    const forwardToGoogleSheet = async (ordersToForward: Order[]) => {
+        if (ordersToForward.length === 0) return;
+        try {
+            const response = await fetch('http://localhost:3001/api/forward-to-sheet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orders: ordersToForward }),
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Network response was not ok: ${errorText}`);
+            }
+            console.log(`${ordersToForward.length} orders forwarded to Google Sheet successfully`);
+        } catch (error) {
+            console.error('Failed to forward orders to Google Sheet:', error);
+        }
+    };
+
 
     const handleOpenDetailModal = (order: Order) => {
         setSelectedOrder(order);
