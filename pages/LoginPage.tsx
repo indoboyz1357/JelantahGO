@@ -41,7 +41,7 @@ const LoginPage: React.FC<LoginPageProps> = () => {
     if (error) {
       setError(error.message);
     } else {
-      setMessage('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi.');
+      setMessage('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi. Jika tidak menerima email, Anda bisa meminta untuk dikirim ulang.');
       setIsRegistering(false);
     }
   };
@@ -57,6 +57,21 @@ const LoginPage: React.FC<LoginPageProps> = () => {
     }
   };
 
+  const handleResendVerification = async () => {
+    if (!email) {
+      setError('Silakan masukkan email Anda di kolom di atas terlebih dahulu.');
+      return;
+    }
+    setError('');
+    setMessage('');
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    if (error) {
+      setError(error.message);
+    } else {
+      setMessage('Email verifikasi baru telah dikirim. Silakan periksa kotak masuk Anda.');
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
       <div className="p-8 bg-card rounded-lg shadow-xl w-full max-w-sm">
@@ -64,7 +79,16 @@ const LoginPage: React.FC<LoginPageProps> = () => {
         <p className="text-center text-muted-foreground mb-6">
           {isRegistering ? 'Buat Akun Baru' : 'Sistem Manajemen Penjemputan Jelantah'}
         </p>
-        {message && <p className="text-green-500 text-center mb-4">{message}</p>}
+        {message && (
+            <div className="text-green-500 text-center mb-4">
+                <p>{message}</p>
+                {message.includes('verifikasi') && !isRegistering && (
+                    <button type="button" onClick={handleResendVerification} className="text-sm text-primary-600 hover:underline mt-2">
+                        Kirim Ulang Email Verifikasi
+                    </button>
+                )}
+            </div>
+        )}
         <form onSubmit={isRegistering ? handleSignUp : handleLogin}>
           {isRegistering && (
             <div className="mb-4">
