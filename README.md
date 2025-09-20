@@ -39,6 +39,7 @@ The personnel responsible for collecting the oil from customers.
 - **Earnings Dashboard:** Track their total earnings, completed pickups, and volume collected.
 
 ### 4. Warehouse
+
 The staff responsible for verifying the collected oil before it enters the billing cycle.
 - **Pickup Verification:** Review details and proof of pickup submitted by couriers.
 - **Approve for Billing:** Verify and approve completed orders to move them to the billing stage.
