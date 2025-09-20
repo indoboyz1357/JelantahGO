@@ -90,11 +90,17 @@ const App: React.FC = () => {
             return;
         }
 
+        const userProfile = users.find(u => u.id === currentUser.id);
+        if (!userProfile || !userProfile.customer_id) {
+            console.error("Customer profile not found or customer_id is missing.");
+            return;
+        }
+
         const newOrder = {
             ...newOrderData,
             id: `ORD-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
             status: OrderStatus.Pending,
-            customer_id: currentUser.customer_id, // Ensure customer_id is included
+            customer_id: userProfile.customer_id, // Use customer_id from the fetched user profile
         };
 
         const { data, error } = await supabase
