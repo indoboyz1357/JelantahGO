@@ -1,5 +1,6 @@
 // FIX: Replaced placeholder content with a functional root component to resolve compilation errors.
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from './supabaseClient';
 // FIX: Import OrderStatus to use its enum members for type safety.
 import { Page, User, Role, Order, Customer, PriceTier, OrderStatus } from './types';
 import { DEMO_USERS, DEMO_CUSTOMERS, DEMO_ORDERS, DEMO_PRICETIERS } from './constants';
@@ -22,11 +23,31 @@ const App: React.FC = () => {
     const [currentPage, setCurrentPage] = useState<Page>('quick-pickup');
     
     // Data states
-    const [users, setUsers] = useState<User[]>(DEMO_USERS);
-    const [customers, setCustomers] = useState<Customer[]>(DEMO_CUSTOMERS);
-    const [orders, setOrders] = useState<Order[]>(DEMO_ORDERS);
+    const [users, setUsers] = useState<User[]>([]);
+    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [orders, setOrders] = useState<Order[]>([]);
     const [priceTiers, setPriceTiers] = useState<PriceTier[]>(DEMO_PRICETIERS);
     const [whitelist, setWhitelist] = useState<string[]>(['127.0.0.1']); // Default whitelist
+
+    useEffect(() => {
+        fetchData();
+    }, [currentUser]);
+
+    const fetchData = async () => {
+        if (!currentUser) return;
+
+        const { data: usersData, error: usersError } = await supabase.from('users').select('*');
+        if (usersError) console.error('Error fetching users:', usersError);
+        else setUsers(usersData as User[]);
+
+        const { data: customersData, error: customersError } = await supabase.from('customers').select('*');
+        if (customersError) console.error('Error fetching customers:', customersError);
+        else setCustomers(customersData as Customer[]);
+
+        const { data: ordersData, error: ordersError } = await supabase.from('orders').select('*');
+        if (ordersError) console.error('Error fetching orders:', ordersError);
+        else setOrders(ordersData as Order[]);
+    };
 
     // Login/Logout handlers
     const handleLogin = (user: User) => {
@@ -41,15 +62,23 @@ const App: React.FC = () => {
         setCurrentUser(null);
     };
     
-    const addOrder = (newOrderData: Omit<Order, 'id' | 'createdAt' | 'status'>) => {
-        const newOrder: Order = {
+    const addOrder = async (newOrderData: Omit<Order, 'id' | 'createdAt' | 'status'>) => {
+        const newOrder = {
             ...newOrderData,
-            id: `ORD-${String(orders.length + 1).padStart(3, '0')}`,
-            createdAt: new Date().toISOString(),
-            // FIX: Replaced string literal 'Pending' with OrderStatus.Pending enum member to fix the type error.
+            id: `ORD-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
             status: OrderStatus.Pending,
         };
-        setOrders(prev => [newOrder, ...prev]);
+
+        const { data, error } = await supabase
+            .from('orders')
+            .insert([newOrder])
+            .select();
+
+        if (error) {
+            console.error('Error adding order:', error);
+        } else if (data) {
+            setOrders(prev => [...data as Order[], ...prev]);
+        }
     };
 
     // Render logic based on user role
