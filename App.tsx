@@ -85,10 +85,16 @@ const App: React.FC = () => {
     };
     
     const addOrder = async (newOrderData: Omit<Order, 'id' | 'createdAt' | 'status'>) => {
+        if (!currentUser) {
+            console.error("Cannot add order, no user is logged in.");
+            return;
+        }
+
         const newOrder = {
             ...newOrderData,
             id: `ORD-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
             status: OrderStatus.Pending,
+            customer_id: currentUser.customer_id, // Ensure customer_id is included
         };
 
         const { data, error } = await supabase
