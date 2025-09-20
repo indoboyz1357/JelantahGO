@@ -1,39 +1,36 @@
 import React, { useState } from 'react';
+import { supabase } from '../supabaseClient';
 import { User, Role } from '../types';
 
 interface LoginPageProps {
-  onLogin: (user: User) => void;
-  users: User[];
+  // onLogin is no longer needed as auth state is managed by Supabase
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin, users }) => {
-  const [username, setUsername] = useState('');
+const LoginPage: React.FC<LoginPageProps> = () => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const user = users.find(u => u.username === username && u.password === password);
-    if (user) {
-      onLogin(user);
-    } else {
-      setError('Username atau password salah.');
+    setError('');
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setError(error.message);
     }
+    // onLogin is no longer needed, App will react to onAuthStateChange
   };
   
-  const handleQuickLogin = (role: Role) => {
-    // For roles other than customer, just find the first one.
-    // For customer, find the specific demo customer.
-    const user = role === Role.Customer 
-        ? users.find(u => u.username === 'siti')
-        : users.find(u => u.role === role);
-
-    if(user) {
-        onLogin(user);
-    } else {
-        setError(`Tidak ada user demo untuk role ${role}.`);
+  const handleQuickLogin = async (email_val: string) => {
+    setError('');
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email_val,
+      password: 'password', // Assuming a default password for demo users
+    });
+    if (error) {
+      setError(`Could not log in ${email_val}. Error: ${error.message}`);
     }
-  }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
@@ -43,16 +40,16 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, users }) => {
         <form onSubmit={handleLogin}>
           <div className="mb-4">
             <label className="block text-foreground text-sm font-bold mb-2" htmlFor="username">
-              Username
+              Email
             </label>
             <input
               className="shadow appearance-none border border-border rounded w-full py-2 px-3 text-foreground leading-tight focus:outline-none focus:shadow-outline bg-input placeholder:text-muted-foreground"
-              id="username"
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
+              id="email"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
             />
           </div>
           <div className="mb-6">
@@ -84,10 +81,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, users }) => {
                 <div className="flex-grow border-t border-border"></div>
             </div>
             <div className="grid grid-cols-2 gap-2 mt-2">
-                <button onClick={() => handleQuickLogin(Role.Admin)} className="w-full bg-gray-700 hover:bg-gray-800 text-white text-sm py-2 px-3 rounded">Admin</button>
-                <button onClick={() => handleQuickLogin(Role.Kurir)} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-3 rounded">Kurir</button>
-                <button onClick={() => handleQuickLogin(Role.Warehouse)} className="w-full bg-orange-600 hover:bg-orange-700 text-white text-sm py-2 px-3 rounded">Warehouse</button>
-                <button onClick={() => handleQuickLogin(Role.Customer)} className="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm py-2 px-3 rounded">Customer</button>
+                <button onClick={() => handleQuickLogin('admin@jelantah.com')} className="w-full bg-gray-700 hover:bg-gray-800 text-white text-sm py-2 px-3 rounded">Admin</button>
+                <button onClick={() => handleQuickLogin('kurir@jelantah.com')} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-3 rounded">Kurir</button>
+                <button onClick={() => handleQuickLogin('warehouse@jelantah.com')} className="w-full bg-orange-600 hover:bg-orange-700 text-white text-sm py-2 px-3 rounded">Warehouse</button>
+                <button onClick={() => handleQuickLogin('siti@customer.com')} className="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm py-2 px-3 rounded">Customer</button>
             </div>
         </div>
 

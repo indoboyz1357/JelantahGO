@@ -30,12 +30,41 @@ const App: React.FC = () => {
     const [whitelist, setWhitelist] = useState<string[]>(['127.0.0.1']); // Default whitelist
 
     useEffect(() => {
-        fetchData();
+        const session = supabase.auth.getSession();
+        // Removed the direct call to setCurrentUser, will be handled by onAuthStateChange
+    
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+          async (_event, session) => {
+            if (session?.user) {
+              const { data: userProfile, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+              
+              if (error) {
+                console.error('Error fetching user profile:', error);
+              } else {
+                setCurrentUser(userProfile as User);
+              }
+            } else {
+              setCurrentUser(null);
+            }
+          }
+        );
+    
+        return () => {
+          authListener.subscription.unsubscribe();
+        };
+      }, []);
+
+    useEffect(() => {
+        if (currentUser) {
+            fetchData();
+        }
     }, [currentUser]);
 
     const fetchData = async () => {
-        if (!currentUser) return;
-
         const { data: usersData, error: usersError } = await supabase.from('users').select('*');
         if (usersError) console.error('Error fetching users:', usersError);
         else setUsers(usersData as User[]);
@@ -49,17 +78,10 @@ const App: React.FC = () => {
         else setOrders(ordersData as Order[]);
     };
 
-    // Login/Logout handlers
-    const handleLogin = (user: User) => {
-        setCurrentUser(user);
-        // Set default page based on role
-        if (user.role === Role.Admin) {
-            setCurrentPage('quick-pickup');
-        }
-    };
-
-    const handleLogout = () => {
-        setCurrentUser(null);
+    const handleLogout = async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) console.error('Error logging out:', error);
+        else setCurrentUser(null);
     };
     
     const addOrder = async (newOrderData: Omit<Order, 'id' | 'createdAt' | 'status'>) => {
@@ -84,7 +106,7 @@ const App: React.FC = () => {
     // Render logic based on user role
     const renderContent = () => {
         if (!currentUser) {
-            return <LoginPage onLogin={handleLogin} users={users} />;
+            return <LoginPage />;
         }
         
         switch (currentUser.role) {
