@@ -103,9 +103,17 @@ const PickupView: React.FC<CourierDashboardProps> = ({ currentUser, orders, setO
             setSelectedOrder(null);
             setActualLiters('');
             setPickupPhoto(null);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error uploading image:', error);
-            alert('Gagal mengunggah gambar. Silakan coba lagi.');
+            // More detailed error logging
+            if (error.statusCode) {
+                console.error(`Supabase Storage Error: Status Code ${error.statusCode}, Message: ${error.message}`);
+            } else if (error.name === 'ClientError') {
+                console.error(`Supabase Client Error: ${error.message}`);
+            } else if (error instanceof Error) {
+                console.error(`General Error: ${error.message}, Stack: ${error.stack}`);
+            }
+            alert(`Gagal mengunggah gambar. Silakan coba lagi. Detail: ${error.message || error.toString()}`);
         } finally {
             setIsUploading(false);
         }
