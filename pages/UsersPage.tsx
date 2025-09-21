@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { supabase } from '../supabaseClient'; // Import supabase client
 import { User, Role } from '../types';
 import Modal from '../components/Modal';
 import { SearchIcon } from '../components/icons';
@@ -13,7 +14,10 @@ const UsersPage: React.FC<UsersPageProps> = ({ users, setUsers }) => {
     const [isEditModalOpen, setEditModalOpen] = useState(false);
     const [isAddModalOpen, setAddModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [newUser, setNewUser] = useState<Partial<User>>({ name: '', username: '', role: Role.Kurir });
+    const [newUser, setNewUser] = useState<Partial<User & { password?: string }>>({ name: '', username: '', role: Role.Kurir, password: '' });
+
+    // Prevent the primary admin from being deleted
+    const primaryAdminId = 'admin-jelantahgo';
 
     const filteredUsers = useMemo(() => {
         return users.filter(user =>
@@ -40,23 +44,52 @@ const UsersPage: React.FC<UsersPageProps> = ({ users, setUsers }) => {
         handleCloseModal();
     };
 
-    const handleAddUser = () => {
-        if (!newUser.name || !newUser.username || !newUser.role) {
-            alert("Harap isi semua field.");
+    const handleAddUser = async () => {
+        if (!newUser.name || !newUser.username || !newUser.role || !newUser.password) {
+            alert("Harap isi semua field, termasuk password.");
             return;
         }
-        const userToAdd: User = {
-            id: `user-${Date.now()}`,
-            name: newUser.name,
-            username: newUser.username,
-            role: newUser.role,
-        };
-        setUsers(prev => [...prev, userToAdd]);
-        handleCloseModal();
+
+        const { data, error } = await supabase.auth.signUp({
+            email: newUser.username, // Using username as email for auth
+            password: newUser.password,
+            options: {
+                data: {
+                    name: newUser.name,
+                    role: newUser.role,
+                }
+            }
+        });
+
+        if (error) {
+            alert(`Error creating user: ${error.message}`);
+            return;
+        }
+
+        if (data.user) {
+            const userToAdd: User = {
+                id: data.user.id,
+                name: newUser.name,
+                username: newUser.username,
+                role: newUser.role,
+            };
+            setUsers(prev => [...prev, userToAdd]);
+            handleCloseModal();
+        }
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, userState: 'edit' | 'add') => {
-        const { name, value } = e.target;
+    const handleDeleteUser = (userId: string) => {
+        if (userId === primaryAdminId) {
+            alert('Admin utama tidak dapat dihapus.');
+            return;
+        }
+        if (window.confirm('Apakah Anda yakin ingin menghapus user ini?')) {
+            setUsers(prev => prev.filter(u => u.id !== userId));
+        }
+    };
+ 
+     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, userState: 'edit' | 'add') => {
+         const { name, value } = e.target;
         if (userState === 'edit' && editingUser) {
             setEditingUser({ ...editingUser, [name]: value });
         } else if (userState === 'add') {
@@ -98,8 +131,9 @@ const UsersPage: React.FC<UsersPageProps> = ({ users, setUsers }) => {
                                 <td className="px-6 py-4 font-medium text-foreground">{user.name}</td>
                                 <td className="px-6 py-4">{user.username}</td>
                                 <td className="px-6 py-4">{user.role}</td>
-                                <td className="px-6 py-4">
+                                <td className="px-6 py-4 space-x-2">
                                     <button onClick={() => handleOpenEditModal(user)} className="font-medium text-blue-600 hover:underline">Edit</button>
+                                    <button onClick={() => handleDeleteUser(user.id)} className="font-medium text-red-600 hover:underline">Hapus</button>
                                 </td>
                             </tr>
                         ))}
@@ -143,6 +177,10 @@ const UsersPage: React.FC<UsersPageProps> = ({ users, setUsers }) => {
                     <div>
                         <label className="block text-sm font-medium text-foreground">Username</label>
                         <input type="text" name="username" value={newUser.username} onChange={(e) => handleInputChange(e, 'add')} className="mt-1 w-full p-2 border rounded-md border-border bg-input text-foreground" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-foreground">Password</label>
+                        <input type="password" name="password" value={newUser.password} onChange={(e) => handleInputChange(e, 'add')} className="mt-1 w-full p-2 border rounded-md border-border bg-input text-foreground" />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-foreground">Role</label>

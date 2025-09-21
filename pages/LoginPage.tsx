@@ -1,14 +1,8 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { User, Role } from '../types';
+import { Link } from 'react-router-dom'; // Import Link
 
-interface LoginPageProps {
-  // onLogin is no longer needed as auth state is managed by Supabase
-}
-
-const LoginPage: React.FC<LoginPageProps> = () => {
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [name, setName] = useState('');
+const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -24,28 +18,6 @@ const LoginPage: React.FC<LoginPageProps> = () => {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setMessage('');
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name: name,
-          role: 'customer',
-        },
-      },
-    });
-    if (error) {
-      setError(error.message);
-    } else {
-      setMessage('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi. Jika tidak menerima email, Anda bisa meminta untuk dikirim ulang.');
-      setIsRegistering(false);
-    }
-  };
-  
   const handleQuickLogin = async (email_val: string) => {
     setError('');
     const { error } = await supabase.auth.signInWithPassword({
@@ -77,35 +49,19 @@ const LoginPage: React.FC<LoginPageProps> = () => {
       <div className="p-8 bg-card rounded-lg shadow-xl w-full max-w-sm">
         <h1 className="text-4xl font-extrabold text-center mb-2 text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-600">JelantahGO</h1>
         <p className="text-center text-muted-foreground mb-6">
-          {isRegistering ? 'Buat Akun Baru' : 'Sistem Manajemen Penjemputan Jelantah'}
+          Sistem Manajemen Penjemputan Jelantah
         </p>
         {message && (
             <div className="text-green-500 text-center mb-4">
                 <p>{message}</p>
-                {message.includes('verifikasi') && !isRegistering && (
+                {message.includes('verifikasi') && (
                     <button type="button" onClick={handleResendVerification} className="text-sm text-primary-600 hover:underline mt-2">
                         Kirim Ulang Email Verifikasi
                     </button>
                 )}
             </div>
         )}
-        <form onSubmit={isRegistering ? handleSignUp : handleLogin}>
-          {isRegistering && (
-            <div className="mb-4">
-              <label className="block text-foreground text-sm font-bold mb-2" htmlFor="name">
-                Nama Lengkap
-              </label>
-              <input
-                className="shadow appearance-none border border-border rounded w-full py-2 px-3 text-foreground leading-tight focus:outline-none focus:shadow-outline bg-input placeholder:text-muted-foreground"
-                id="name"
-                type="text"
-                placeholder="Nama Lengkap"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-          )}
+        <form onSubmit={handleLogin}>
           <div className="mb-4">
             <label className="block text-foreground text-sm font-bold mb-2" htmlFor="email">
               Email
@@ -134,23 +90,27 @@ const LoginPage: React.FC<LoginPageProps> = () => {
               autoComplete="current-password"
             />
           </div>
+          <div className="flex items-center justify-end mb-4 text-sm">
+            <Link to="/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
+              Lupa Kata Sandi?
+            </Link>
+          </div>
           {error && <p className="text-destructive text-xs italic mb-4">{error}</p>}
           <div className="flex items-center justify-between">
             <button className="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full" type="submit">
-              {isRegistering ? 'Register' : 'Sign In'}
+              Sign In
             </button>
           </div>
         </form>
 
         <div className="mt-6 text-center">
-          <button onClick={() => { setIsRegistering(!isRegistering); setError(''); setMessage(''); }} className="text-sm text-primary-600 hover:underline">
-            {isRegistering ? 'Sudah punya akun? Login' : 'Belum punya akun? Daftar sekarang'}
-          </button>
+          <Link to="/register" className="text-sm text-primary-600 hover:underline">
+            Belum punya akun? Daftar sekarang
+          </Link>
         </div>
 
-        {!isRegistering && (
-          <div className="mt-6 text-center">
-              <div className="relative flex py-2 items-center">
+        <div className="mt-6 text-center">
+            <div className="relative flex py-2 items-center">
                   <div className="flex-grow border-t border-border"></div>
                   <span className="flex-shrink mx-4 text-muted-foreground text-sm">Coba login sebagai</span>
                   <div className="flex-grow border-t border-border"></div>
@@ -162,7 +122,6 @@ const LoginPage: React.FC<LoginPageProps> = () => {
                 <button onClick={() => handleQuickLogin('siti@customer.com')} className="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm py-2 px-3 rounded">Customer</button>
             </div>
           </div>
-        )}
 
       </div>
     </div>
